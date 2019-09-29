@@ -1,27 +1,36 @@
-git #!/usr/bin/python3
+#!/usr/bin/python3
 
 import psutil
 import datetime
-from gi.repository import Notify, Gtk
 import time
 import os
+from azure.common.credentials import ServicePrincipalCredentials
+from azure.mgmt.compute import ComputeManagementClient
+import json
 
 
 class AutoStopper:
-    STOP_THRESHOLD = 8.0  # cpu percent
-    SHUTDOWN_TIMEOUT = 2  # minutes
-    NOTIFICATION_TIMEOUT =1  # minutes
+    STOP_THRESHOLD = 1.0  # cpu percent
+    SHUTDOWN_TIMEOUT = 1.0  # minutes
 
     def __init__(self):
         self.below_threshold_time = None
-        self.notification = None
 
-        Notify.init("AutoStopper")
+        self.config = json.load(open("config.json"))
+
+        self.credentials = ServicePrincipalCredentials(
+            client_id=self.config["client_id"],
+            secret=self.config["secret"],
+            tenant=self.config["tenant"]
+        )
+
+        self.vm_name = open("vm_name.txt").read()
+
+        self.compute_client = ComputeManagementClient(self.credentials, self.config["subscription_id"])
 
     def stop_idle_timer(self):
         print("stopped idle timer")
         self.below_threshold_time = None
-        self.notification = None
 
     def start(self):
         while True:
@@ -29,24 +38,16 @@ class AutoStopper:
             print(cpu_percent)
             if cpu_percent < AutoStopper.STOP_THRESHOLD:
                 if self.below_threshold_time:
-                    notification_compare = self.below_threshold_time + \
-                                           datetime.timedelta(minutes=AutoStopper.NOTIFICATION_TIMEOUT)
-                    if notification_compare < datetime.datetime.now() and not self.notification:
-                        title = "AutoStopper Engaged"
-                        body = "AutoStopper has determined that this virtual machine is idle. If no activity is " \
-                               "detected, AutoStopper will shutdown this machine."
-                        self.notification = Notify.Notification.new(title, body)
-                        self.notification.set_timeout(Notify.EXPIRES_NEVER)
-
-                        self.notification.show()
-                        print("notification popped")
-
                     shutdown_compare = self.below_threshold_time + \
                                        datetime.timedelta(minutes=AutoStopper.SHUTDOWN_TIMEOUT)
+                    print(shutdown_compare, datetime.datetime.now())
                     if shutdown_compare < datetime.datetime.now():
-                        os.system("shutdown now")
                         print("shutdown")
-                        return
+                        async_vm_deallocate = self.compute_client.virtual_machines.deallocate(
+                            self.config["group_name"],
+                            self.vm_name
+                        )
+                        async_vm_deallocate.wait()
                 else:
                     self.below_threshold_time = datetime.datetime.now()
                     print("started idle timer")
@@ -58,8 +59,3 @@ class AutoStopper:
 
 if __name__ == "__main__":
     AutoStopper().start()
-
-    '''
-    Notify.init("AutoStopper")
-    Notify.Notification.new("test notification").show()
-    '''
