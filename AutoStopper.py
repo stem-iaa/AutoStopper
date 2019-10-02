@@ -10,7 +10,7 @@ import json
 
 
 class AutoStopper:
-    STOP_THRESHOLD = 1.0  # cpu percent
+    STOP_THRESHOLD = 2.5  # cpu percent
     SHUTDOWN_TIMEOUT = 20.0  # minutes
 
     def __init__(self):
