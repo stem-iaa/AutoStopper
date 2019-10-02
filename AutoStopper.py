@@ -38,6 +38,13 @@ class AutoStopper:
         log_file.write(str(message) + "\n")
         log_file.close()
 
+    def shutdown_vm(self):
+        async_vm_deallocate = self.compute_client.virtual_machines.deallocate(
+            self.config["group_name"],
+            self.vm_name
+        )
+        async_vm_deallocate.wait()
+
     def start(self):
         while True:
             cpu_percent = psutil.cpu_percent()
@@ -48,11 +55,7 @@ class AutoStopper:
                                        datetime.timedelta(minutes=AutoStopper.SHUTDOWN_TIMEOUT)
                     if shutdown_compare < datetime.datetime.now():
                         self.log("shutdown")
-                        async_vm_deallocate = self.compute_client.virtual_machines.deallocate(
-                            self.config["group_name"],
-                            self.vm_name
-                        )
-                        async_vm_deallocate.wait()
+                        self.shutdown_vm()
                 else:
                     self.below_threshold_time = datetime.datetime.now()
                     self.log("started idle timer")
