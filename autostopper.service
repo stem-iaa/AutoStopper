@@ -1,0 +1,7 @@
+[Service]
+Type=simple
+
+ExecStart=/home/stemiaa/AutoStopper/AutoStopper.py
+
+[Install]
+WantedBy=multi-user.target
