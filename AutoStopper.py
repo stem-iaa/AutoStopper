@@ -11,7 +11,7 @@ import json
 
 class AutoStopper:
     STOP_THRESHOLD = 1.0  # cpu percent
-    SHUTDOWN_TIMEOUT = 1.0  # minutes
+    SHUTDOWN_TIMEOUT = 20.0  # minutes
 
     def __init__(self):
         self.project_dir = "/home/stemiaa/AutoStopper"
