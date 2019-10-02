@@ -23,7 +23,7 @@ class AutoStopper:
             secret=self.config["secret"],
             tenant=self.config["tenant"]
         )
-        self.vm_name = open(self.project_dir + "/vm_name.txt").read()
+        self.vm_name = open(self.project_dir + "/vm_name.txt").read().strip()
 
         self.compute_client = ComputeManagementClient(self.credentials, self.config["subscription_id"])
 
